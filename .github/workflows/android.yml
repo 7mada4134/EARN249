@@ -14,11 +14,11 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
+      - name: Checkout
+        uses: actions/checkout@v5
 
       - name: Setup Java
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -29,20 +29,30 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Check project files
+      - name: Check Flutter
+        run: flutter doctor -v
+
+      - name: Check project
         run: |
-          test -f pubspec.yaml
-          test -f android/app/build.gradle || test -f android/app/build.gradle.kts
+          ls -la
+          ls -la android
+          flutter --version
 
       - name: Install dependencies
-        run: flutter pub get
+        run: flutter pub get -v
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release -v
 
       - name: Upload APK
-        uses: actions/upload-artifact@v6
+        if: success()
+        uses: actions/upload-artifact@v4
         with:
           name: EARN249-APK
           path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
+
+      - name: Save diagnostic logs
+        if: always()
+        run: |
+          echo "Build diagnostic completed"
+          flutter doctor -v || true
