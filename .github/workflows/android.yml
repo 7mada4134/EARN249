@@ -1,58 +1,44 @@
-name: Build EARN249 APK
+name: Build Android APK
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
-
-permissions:
-  contents: read
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
 
 jobs:
   build:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v5
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'zulu'
           java-version: '17'
 
-      - name: Setup Flutter
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.19.x' # إصدار مستقر ومناسب لتجنب مشاكل التوافق
+          channel: 'stable'
           cache: true
 
-      - name: Check Flutter
-        run: flutter doctor -v
+      - name: Install Dependencies
+        run: flutter pub get
 
-      - name: Check project
+      - name: Build APK (with verbose logs on failure)
         run: |
-          ls -la
-          ls -la android
-          flutter --version
+          flutter build apk --release --verbose || {
+            echo "::error::Flutter build failed. Check logs above."
+            exit 1
+          }
 
-      - name: Install dependencies
-        run: flutter pub get -v
-
-      - name: Build APK
-        run: flutter build apk --release -v
-
-      - name: Upload APK
-        if: success()
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: EARN249-APK
           path: build/app/outputs/flutter-apk/app-release.apk
-
-      - name: Save diagnostic logs
-        if: always()
-        run: |
-          echo "Build diagnostic completed"
-          flutter doctor -v || true
