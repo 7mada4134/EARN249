@@ -1,0 +1,44 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x' # إصدار مستقر ومناسب لتجنب مشاكل التوافق
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build APK (with verbose logs on failure)
+        run: |
+          flutter build apk --release --verbose || {
+            echo "::error::Flutter build failed. Check logs above."
+            exit 1
+          }
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EARN249-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
